@@ -9,6 +9,7 @@ interface Cell {
     mine: boolean;
     flagged: boolean;
     revealed: boolean;
+    red: boolean;
 }
 
 function loopSurrounding(
@@ -41,6 +42,7 @@ function createGrid(rows: number, cols: number, mines: number): Cell[][] {
                 mine: false,
                 flagged: false,
                 revealed: false,
+                red: false,
             };
         }
     }
@@ -72,18 +74,38 @@ interface BoardProps {
 
 export const Board: React.FC<BoardProps> = ({ rows, cols, mines }) => {
     const [grid, setGrid] = useState<Cell[][]>([]);
+    const [lost, setLost] = useState(false);
+    const [flaggedCount, setFlaggedCount] = useState(0);
+
+    function refreshBoard() {
+        setLost(false);
+        setGrid(createGrid(rows, cols, mines));
+        setFlaggedCount(0);
+    }
 
     useEffect(() => {
-        setGrid(createGrid(rows, cols, mines));
+        refreshBoard();
     }, []);
 
     // recursively reveal cells to reveal blank cells
     function revealCellInGrid(grid: Cell[][], x: number, y: number): void {
         const cell = grid[x][y];
-        if (cell.revealed) return;
+        if (cell.revealed || cell.flagged) return;
         cell.revealed = true;
 
-        if (cell.value != 0 || cell.mine) return;
+        if (cell.mine) {
+            setLost(true);
+            cell.red = true;
+            // reveal every cell to show player
+            grid.forEach((row) => row.forEach((cell) => (cell.revealed = true)));
+            setTimeout(() => {
+                // alert("You Lost");
+                refreshBoard();
+            }, 1000);
+            return;
+        }
+
+        if (cell.value != 0) return;
         loopSurrounding(grid, x, y, (_, x, y) => {
             revealCellInGrid(grid, x, y);
         });
@@ -96,19 +118,43 @@ export const Board: React.FC<BoardProps> = ({ rows, cols, mines }) => {
         setGrid(newGrid);
     }
 
+    function flagCell(x: number, y: number): void {
+        const newGrid = Array.from(grid);
+        const cell = newGrid[x][y];
+        cell.flagged = !cell.flagged;
+        setFlaggedCount(flaggedCount + (cell.flagged ? 1 : -1));
+        setGrid(newGrid);
+    }
+
     return (
-        <div className="board" style={{ "--rows": rows }}>
-            {grid.map((col, x) =>
-                col.map((cell, y) => (
-                    <div
-                        key={x * rows + y}
-                        className={`cell ${cell.revealed ? "revealed" : ""}`}
-                        onClick={() => revealCell(x, y)}
-                    >
-                        <span>{cell.mine ? "💣" : cell.value || ""}</span>
-                    </div>
-                ))
-            )}
-        </div>
+        <>
+            <h1>Mines left: {mines - flaggedCount}</h1>
+            <div className={`board ${lost ? "lost" : ""}`} style={{ "--rows": rows }}>
+                {grid.map((col, x) =>
+                    col.map((cell, y) => (
+                        <div
+                            key={x * rows + y}
+                            className={`cell ${cell.revealed ? "revealed" : ""}`}
+                            onClick={() => revealCell(x, y)}
+                            onContextMenu={(e) => {
+                                e.preventDefault();
+                                flagCell(x, y);
+                            }}
+                            style={{ background: cell.red ? "#e51f12" : "" }}
+                        >
+                            <span>
+                                {!cell.revealed
+                                    ? cell.flagged
+                                        ? "🚩"
+                                        : ""
+                                    : cell.mine
+                                    ? "💣"
+                                    : cell.value || ""}
+                            </span>
+                        </div>
+                    ))
+                )}
+            </div>
+        </>
     );
 };

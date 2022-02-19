@@ -21,22 +21,21 @@ main {
 .cell {
     width: 2rem;
     height: 2rem;
-    border: 2px solid black;
+    border: 1px solid black;
     display: flex;
     justify-content: center;
     user-select: none;
-    background: #ccc;
+    background: #999;
+    cursor: pointer;
+    transition: background 500ms;
 }
 
 .cell span {
-    display: none;
     margin: auto;
 }
 
-.cell.revealed span {
-    display: inline;
-}
-
-.cell.revealed {
-    background: #fff;
+.cell.revealed,
+.board.lost .cell {
+    background: #eee;
+    cursor: initial;
 }
