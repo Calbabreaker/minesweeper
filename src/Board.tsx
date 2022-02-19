@@ -121,8 +121,12 @@ export const Board: React.FC<BoardProps> = ({ rows, cols, mines }) => {
     function flagCell(x: number, y: number): void {
         const newGrid = Array.from(grid);
         const cell = newGrid[x][y];
-        cell.flagged = !cell.flagged;
-        setFlaggedCount(flaggedCount + (cell.flagged ? 1 : -1));
+
+        if (!cell.revealed) {
+            cell.flagged = !cell.flagged;
+            setFlaggedCount(flaggedCount + (cell.flagged ? 1 : -1));
+        }
+
         setGrid(newGrid);
     }
 
@@ -143,10 +147,10 @@ export const Board: React.FC<BoardProps> = ({ rows, cols, mines }) => {
                             style={{ background: cell.red ? "#e51f12" : "" }}
                         >
                             <span>
-                                {!cell.revealed
-                                    ? cell.flagged
-                                        ? "🚩"
-                                        : ""
+                                {cell.flagged
+                                    ? "🚩"
+                                    : !cell.revealed
+                                    ? ""
                                     : cell.mine
                                     ? "💣"
                                     : cell.value || ""}
