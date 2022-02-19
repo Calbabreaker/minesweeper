@@ -1,13 +1,11 @@
 name: Deploy
 
 on:
-push:
-    branchs: main
+    push:
+        branchs: main
 
 jobs:
     deploy:
-        needs: build-test
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository_owner == 'Calbabreaker'
         runs-on: ubuntu-latest
         steps:
             - name: Checkout
